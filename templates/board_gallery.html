@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://matsudatkm.pythonanywhere.com/static/styles.css">
+  <link rel="shortcut icon" href="https://matsudatkm.pythonanywhere.com/static/icon.png" type="image/x-icon">
+  <link rel="icon" href="https://matsudatkm.pythonanywhere.com/static/icon.png" type="image/x-icon">
+  <title>オセロ盤ギャラリー</title>
+</head>
+<body>
+    <header>
+        <h2>オセロ盤ギャラリー</h2>
+        <p>現在のみんなの盤面</p>
+        <nav>
+            <a href="https://matsudatkm.pythonanywhere.com/">HOME</a>
+            <a href="https://matsudatkm.pythonanywhere.com/board-gallery">GALLERY</a>
+        </nav>
+    </header>
+    <main>
+        <p style="text-align: center;">adjust AI = 手加減AI&nbsp;&nbsp;&nbsp;strong AI = 強いAI</p>
+        <div class="boards">
+        {% for i in range(image_list|length) %}
+          <div class="tile">
+            <img src="{{ image_list[i] }}" alt="board">
+            <p class="caption">↑ {{ ai_type_list[i] }} AI ↑</p>
+          </div>
+        {% endfor %}
+        </div>
+    </main>
+</body>
+<footer>
+    <img src="https://matsudatkm.pythonanywhere.com/static/icon.png" alt="ロゴ" class="logo_left">
+    <p>&copy; 2023 Matsuda Takumi</p>
+    <img src="https://matsudatkm.pythonanywhere.com/static/icon.png" alt="ロゴ" class="logo_right">
+</footer>
+</html>

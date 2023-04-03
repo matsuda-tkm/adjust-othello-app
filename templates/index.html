@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://matsudatkm.pythonanywhere.com/static/styles.css">
+  <link rel="shortcut icon" href="https://matsudatkm.pythonanywhere.com/static/icon.png" type="image/x-icon">
+  <link rel="icon" href="https://matsudatkm.pythonanywhere.com/static/icon.png" type="image/x-icon">
+
+  <title>レスカBotアップデート情報</title>
+</head>
+<body>
+  <header>
+    <h2>レスカBotアップデート情報</h2>
+    <nav>
+        <a href="https://matsudatkm.pythonanywhere.com/">HOME</a>
+        <a href="https://matsudatkm.pythonanywhere.com/board-gallery">GALLERY</a>
+    </nav>
+  </header>
+  <main>
+  <div class="banner">
+    <a href="https://forms.gle/St9o1MGgnqSNCwh27">不具合報告はこちら</a>
+  </div>
+
+    <section class="update">
+      <h2>バージョン 1.2.5</h2>
+      <ul>
+        <p class="date">2023年4月2日11:28</p>
+        <li><span class="tag bug-fix">アルゴリズム更新</span>強いAIの精度を改善しました。また、評価モデルの更新を実施しました。</li>
+        <ol>
+            <li>プロの手ベースのアルゴリズムから、評価値ベースのアルゴリズムへ変更</li>
+            <li>1手先読みを導入</li>
+            <li>モデルを軽量化し、学習データ量を増加</li>
+                <ol>
+                    <li>畳み込み層：10 → 5</li>
+                    <li>チャンネル数：200 → 100</li>
+                    <li>学習データ数：460.8万盤面 → 2099.2万盤面</li>
+                </ol>
+        </ol>
+      </ul>
+    </section>
+
+    <section class="update">
+      <h2>バージョン 1.2.4</h2>
+      <ul>
+        <p class="date">2023年3月28日19:37</p>
+        <li><span class="tag bug-fix">バグ修正</span>「冨岡大機」と入力すると「Tomioka University」と誤訳される不具合を修正しました。</li>
+      </ul>
+    </section>
+
+    <section class="update">
+      <h2>バージョン 1.2.3</h2>
+      <ul>
+        <p class="date">2023年3月28日13:27</p>
+        <li><span class="tag bug-fix">機能改善</span>オセロ対戦に関係ない文字列を送信したときの挙動をアップデートしました。</li>
+        <ol>
+            <li>日本語以外でも翻訳できるように改善</li>
+            <li>隠しコマンドを追加</li>
+                <ol>
+                    <li>to:xx</li>
+                    <p>xxに<a href="https://www.benricho.org/translate/languagecode.html" target="_blank">2文字言語コード</a>を入れ、それに続けて（スペース等不要）文章を入力するとその言語に翻訳します。</p>
+                    <li>detect:</li>
+                    <p>これに続けて文章を入力すると、その文章の言語を推定します。</p>
+                </ol>
+        </ol>
+      </ul>
+    </section>
+
+    <section class="update">
+      <h2>バージョン 1.2.2</h2>
+      <ul>
+        <p class="date">2023年3月27日15:46</p>
+        <li><span class="tag bug-fix">機能改善</span>オセロ盤の表示をテキストから画像に変更しました。</li>
+      </ul>
+    </section>
+
+    <section class="update">
+      <h2>バージョン 1.2.1</h2>
+      <ul>
+        <p class="date">2023年3月26日21:13</p>
+        <li><span class="tag bug-fix">バグ修正</span> パスをするとa1に石が置かれてしまうバグを修正しました。</li>
+      </ul>
+    </section>
+
+    <section class="update">
+      <h2>バージョン 1.2.0</h2>
+      <ul>
+        <p class="date">2023年3月26日10:30</p>
+        <li><span class="tag feature">新機能</span> AI評価機能を追加</li>
+        <p>あなたが指した手をAIが評価する機能です。評価値は -100 から +100 をとり、プラスになるほど勝つ可能性が高く、マイナスになるほど負ける可能性が高いことを示します。</p>
+      </ul>
+    </section>
+
+    <section class="update">
+      <h2>バージョン 1.1.1</h2>
+      <ul>
+        <p class="date">2023年3月25日10:33</p>
+        <li><span class="tag feature">新機能</span> 強いAIとの対戦機能を追加しました。</li>
+        <p>「現在の盤面から、次にプロはどの手を指すか？」を学習させたものです。”テキトー”に打つと、99％負けます。</p>
+        <li><span class="tag bug-fix">機能改善</span> 手加減AIのチューニングを実施しました。</li>
+      </ul>
+    </section>
+
+    <section class="update">
+      <h2>バージョン 1.0.1</h2>
+      <ul>
+        <p class="date">2023年3月24日16:35</p>
+        <li><span class="tag bug-fix">機能改善</span>「pass」だけでなく「パス」「ぱす」「pas」「PASS」「Pass」も使えるようになりました。</li>
+      </ul>
+    </section>
+
+    <section class="update">
+      <h2>バージョン 1.0.0</h2>
+      <ul>
+        <p class="date">2023年3月24日15:29</p>
+        <li><span class="tag release">リリース</span> レスカBotをリニューアルし、オセロAIをリリースしました。</li>
+      </ul>
+    </section>
+
+    <p class="chat-gpt">このWebページは<a href="https://chat.openai.com/chat/" target="_blank">ChatGPT</a>の協力によって作成されました。</p>
+  </main>
+</body>
+<footer>
+    <img src="https://matsudatkm.pythonanywhere.com/static/icon.png" alt="ロゴ" class="logo_left">
+    <p>&copy; 2023 Matsuda Takumi</p>
+    <img src="https://matsudatkm.pythonanywhere.com/static/icon.png" alt="ロゴ" class="logo_right">
+</footer>
+</html>

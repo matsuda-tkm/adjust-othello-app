@@ -1,0 +1,184 @@
+body {
+  margin: 0;
+  font-family: "Arial", sans-serif;
+  background-color: #f5f5f5;
+}
+
+header {
+  background-color: #4CAF50;
+  padding: 10px;
+  text-align: center;
+  color: white;
+}
+
+header p {
+  font-size: 15px;
+}
+
+header a {
+  text-decoration: none;
+  color: #333;
+  margin: 0 10px;
+}
+
+nav {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #4CAF50;
+  padding: 10px 20px;
+  border-radius: 5px;
+}
+
+nav a {
+  background-color: #4CAF50;
+  border: none;
+  color: white;
+  padding: 12px 16px;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+  margin-right: 10px;
+}
+
+
+nav a:hover {
+  background-color: #fff;
+  color: #333;
+}
+
+main {
+  max-width: 800px;
+  margin: 40px auto;
+  padding: 0 16px;
+  margin-top: 20px;
+  margin-bottom: 5px;
+}
+
+img[alt="board"] {
+  width: 150px;
+  height: auto;
+}
+
+.boards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 20px;
+}
+
+.tile {
+  display: inline-block;
+  margin: 5px;
+  text-align: center;
+}
+
+.banner {
+  background-color: #ff6347; /* 赤 */
+  color: #fff; /* 白 */
+  font-size: 1.2rem;
+  font-weight: bold;
+  text-align: center;
+  padding: 0.5rem;
+}
+.banner a {
+  color: #fff;
+  text-decoration: none;
+}
+.banner a:hover {
+  text-decoration: underline;
+}
+
+
+  ol li {
+    list-style-type: disc;
+  }
+
+  .update {
+    background-color: #ffffff;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .update h2 {
+    margin-top: 0;
+    margin-bottom: 16px;
+    font-size: 24px;
+  }
+
+  .update ul {
+    padding: 0;
+    list-style-type: none !important;
+  }
+
+  .update li {
+    padding: 8px 0;
+  }
+
+  .update li::before {
+    color: #4CAF50;
+  }
+
+  footer {
+    background-color: #ddd;
+    padding: 20px;
+    text-align: center;
+    display: flex;
+    align-items: center;
+  }
+
+  footer img:first-of-type {
+    margin-right: auto;
+  }
+
+  footer img:last-of-type {
+    margin-left: auto;
+  }
+
+
+  .logo_left {
+    width: 60px;
+    height: auto;
+  }
+
+  .logo_right {
+    width: 60px;
+    height: auto;
+  transform: scaleX(-1);
+  }
+
+  .date {
+    font-size: 14px;
+    color: #666;
+    margin-top: 5px;
+  }
+
+  .tag {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    margin-right: 0.5rem;
+    border-radius: 1rem;
+    font-weight: bold;
+    text-transform: uppercase;
+  }
+
+  .tag.feature {
+    background-color: #1E90FF; /* 青 */
+    color: white;
+  }
+
+  .tag.bug-fix {
+    background-color: #228B22; /* 緑 */
+    color: white;
+  }
+
+  .tag.release {
+    background-color: #FF6347; /* オレンジ */
+    color: white;
+  }
+
+  .chat-gpt {
+    font-size: 7pt;
+    color: gray;
+  }
