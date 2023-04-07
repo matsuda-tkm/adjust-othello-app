@@ -113,3 +113,27 @@ def show_board(board, mode):
             if j == 7 and i < 7:
                 board_str += "\n"
     return board_str
+
+def get_v(board, model):
+    """Value-Network(状態価値)の出力を返す関数
+
+    Boardオブジェクトとモデルを渡すと、先手の勝率を返す。
+
+    Parameters
+    ----------
+    board: creversi.creversi.Board
+        creversiのBoardオブジェクト。
+    model: ValueNet
+        Value-Networkの学習済みモデル。
+
+    Returns
+    -------
+    v: float32
+        modelに現在の盤面を入力した時の出力。
+    """
+    model.eval()
+    device = "cuda" if next(model.parameters()).is_cuda else "cpu"
+    s = torch.from_numpy(get_board(board,"array")).to(device).view(1,2,8,8)
+    v = model(s).detach().to("cpu")
+    sigmoid = torch.nn.Sigmoid()
+    return sigmoid(v).item()

@@ -1,6 +1,3 @@
-# オセロ盤表示の改善: 反映時URLに注意
-# 3/24 18:22の送信バグ
-
 # flask
 from flask import Flask, request, abort, render_template
 app = Flask(__name__)
@@ -9,7 +6,7 @@ from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
 from linebot.models import MessageEvent, TextMessage, TextSendMessage, ImageSendMessage
 # my module
-from network import DuelingNet
+from network import DuelingNet, ValueNet
 from functions import *
 from creversi import Board, move_to_str, move_from_str
 import creversi
@@ -46,12 +43,17 @@ for i,path in enumerate(os.listdir("./mysite/log/move")):
 
 ## save models(only first time)
 # value_net_state_dict = torch.load(f"{model_dir}value_net2.pth")
+# result_net_state_dict = torch.load(f"{model_dir}result_net.pth")
 # value_net = DuelingNet(100)
+# result_net = ValueNet(100)
 # value_net.load_state_dict(value_net_state_dict)
+# result_net.load_state_dict(result_net_state_dict)
 # torch.save(value_net,f"{model_dir}v2.pth")
+# torch.save(result_net,f"{model_dir}r.pth")
 
 # load models
 value_net = torch.load(f"{model_dir}v2.pth")
+result_net = torch.load(f"{model_dir}r.pth")
 
 
 # read ACCESS_TOKEN and SECRET from json file
@@ -114,16 +116,16 @@ def read_forward(board, model):
     return legal_moves[Qs_forward.argmin()]
 
 # get move
-def get_move(board, q_opponent, threshold=0.1, ai_type="adjust"):
+def get_move(board, q_opponent, threshold=0.2, ai_type="adjust"):
     global value_net
     assert board.turn, "board.turn is False!!"
     legal_moves = list(board.legal_moves)
     q = get_q(board, value_net)
-    q_mean = q[legal_moves].mean()
+    q_mean = get_v(board, result_net)
     if ai_type=="adjust":
-        if q_mean >= 0:
+        if q_mean >= 0.5+threshold:
             return legal_moves[q[legal_moves].argmin()]  # AI優勢なら弱い手を打つ
-        elif (-threshold < q_mean) and (q_opponent < threshold):
+        elif 0.5-threshold < q_mean < 0.5+threshold:
             return legal_moves[q[legal_moves].argmax()]  # 閾値内なら強めの手を打つ
         else:
             return read_forward(board, value_net)  # 閾値を超えたら本気の手を打つ
@@ -272,16 +274,21 @@ def handle_message(event):
                 else:
                     # show board
                     #############################
-                    eval_text = f"評価値：{q[move_from_str(message)]*100:.1f}\nＭＡＸ：{q[legal_moves].max()*100:.1f}\nＭＩＮ：{q[legal_moves].min()*100:.1f}"
-                    if q[move_from_str(message)] == q[legal_moves].min():
-                        eval_text = "う～ん…。\n" + eval_text
-                    elif q[move_from_str(message)] == q[legal_moves].max():
-                        eval_text = "ベストな手！\n" + eval_text
-                    elif q[move_from_str(message)] >= np.median(q[legal_moves]):
-                        eval_text = "その調子！\n" + eval_text
-                    else:
-                        eval_text = "もっとがんばれ！\n" + eval_text
-                    send_list.append(TextSendMessage(text=eval_text))
+                    ai = int(get_v(board,result_net)*100)
+                    you = 100 - ai
+                    # eval_text = f"評価値：{q[move_from_str(message)]*100:.1f}"
+                    # eval_text += f"\nＭＡＸ：{q[legal_moves].max()*100:.1f}"
+                    # eval_text += f"\nＭＩＮ：{q[legal_moves].min()*100:.1f}"
+                    # if q[move_from_str(message)] == q[legal_moves].min():
+                    #     eval_text = "う～ん…。\n" + eval_text
+                    # elif q[move_from_str(message)] == q[legal_moves].max():
+                    #     eval_text = "ベストな手！\n" + eval_text
+                    # elif q[move_from_str(message)] >= np.median(q[legal_moves]):
+                    #     eval_text = "その調子！\n" + eval_text
+                    # else:
+                    #     eval_text = "もっとがんばれ！\n" + eval_text
+                    # send_list.append(TextSendMessage(text=eval_text))
+                    send_list.append(TextSendMessage(text=f"AI {ai}%       あなた {you}%\n{'|'*round(ai/2)} {'|'*round(you/2)}"))
                     renderPM.drawToFile(svg2rlg(io.StringIO(board.to_svg())), f"{img_save_dir}image_{userId}.jpg", fmt="JPEG")
                     send_list.append(ImageSendMessage(f"{img_dir}image_{userId}.jpg", f"{img_dir}image_{userId}.jpg"))
                     send_list.append(TextSendMessage(text=f"私は{move_to_str(move)}に置きました。\n次はあなたの番(白○)です。\n(置ける場所がないときは「パス」と言ってください)"))
@@ -300,7 +307,7 @@ def handle_message(event):
                      "ᵗʱᵃᵑᵏᵧₒᵤ⸜(*ˊᵕˋ*)⸝ﾜｰｲ",
                      "(*ﾉ>ᴗ<)ﾃﾍｯ"
                     ]
-        birthday_words = ["誕生","おめでとう","HPB","birthday","Birthday","ハッピーバースデー","ハッピーバースデイ","22歳","ハピバ"]
+        birthday_words = ["誕生","おめでとう","HPB","birthday","Birthday","ハッピーバースデー","ハッピーバースデイ","ハピバ"]
         now = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9)))
         if ((now.month, now.day)) == (4,3) and any(word in message for word in birthday_words):
             send_list.append(TextSendMessage(text=random.choice(thank_you)))
