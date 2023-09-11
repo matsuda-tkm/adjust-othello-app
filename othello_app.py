@@ -6,10 +6,9 @@ from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
 from linebot.models import MessageEvent, TextMessage, TextSendMessage, ImageSendMessage
 # my module
-from network import DuelingNet, ValueNet
+from network import PolicyNetwork, ValueNetwork
 from functions import *
-from creversi import Board, move_to_str, move_from_str
-import creversi
+from creversi import *
 # translation
 from googletrans import Translator
 # basic module
@@ -42,18 +41,18 @@ for i,path in enumerate(os.listdir("./mysite/log/move")):
             f.write(text)
 
 ## save models(only first time)
-# value_net_state_dict = torch.load(f"{model_dir}value_net2.pth")
-# result_net_state_dict = torch.load(f"{model_dir}result_net.pth")
-# value_net = DuelingNet(100)
-# result_net = ValueNet(100)
+# value_net_state_dict = torch.load(f"{model_dir}value-network-v2.pth")
+# policy_net_state_dict = torch.load(f"{model_dir}policy-network-v3.pth")
+# value_net = ValueNetwork()
+# policy_net = PolicyNetwork()
 # value_net.load_state_dict(value_net_state_dict)
-# result_net.load_state_dict(result_net_state_dict)
-# torch.save(value_net,f"{model_dir}v2.pth")
-# torch.save(result_net,f"{model_dir}r.pth")
+# policy_net.load_state_dict(policy_net_state_dict)
+# torch.save(value_net,f"{model_dir}LOCAL-value-network-v2.pth")
+# torch.save(policy_net,f"{model_dir}LOCAL-policy-network-v3.pth")
 
 # load models
-value_net = torch.load(f"{model_dir}v2.pth")
-result_net = torch.load(f"{model_dir}r.pth")
+value_net = torch.load(f"{model_dir}LOCAL-value-network-v2.pth")
+policy_net = torch.load(f"{model_dir}LOCAL-policy-network-v3.pth")
 
 
 # read ACCESS_TOKEN and SECRET from json file
@@ -100,39 +99,29 @@ def callback():
         abort(400)
     return "OK"
 
-# 1手先読み
-def read_forward(board, model):
-    bitboard = get_board(board,"bitboard")
+def get_move(board, policy_net):
+    """
+    boardオブジェクトから最善手を返す関数。
+    """
+    policy_net.eval()
     legal_moves = list(board.legal_moves)
-    Qs_forward = []
-    for move in legal_moves:
-        board_ = Board()
-        board_.set_bitboard(bitboard, True)  # AI先手ならTrueに設定
-        board_.move(move)
-        legal_moves_next = list(board_.legal_moves)
-        q = get_q(board_, model)
-        Qs_forward.append(q[legal_moves_next].mean())
-    Qs_forward = np.array(Qs_forward)
-    return legal_moves[Qs_forward.argmin()]
+    if 64 not in legal_moves:
+        with torch.no_grad():
+            output = policy_net(torch.from_numpy(board_to_array(board)).unsqueeze(0)).numpy()
+            prob_legal = output[0][legal_moves]
+            move = legal_moves[np.argmax(prob_legal)]
+    else:
+        move = 64
+    return move
 
-# get move
-def get_move(board, q_opponent, threshold=0.2, ai_type="adjust"):
-    global value_net
-    assert board.turn, "board.turn is False!!"
-    legal_moves = list(board.legal_moves)
-    q = get_q(board, value_net)
-    q_mean = get_v(board, result_net)
-    if ai_type=="adjust":
-        if q_mean >= 0.5+threshold:
-            return legal_moves[q[legal_moves].argmin()]  # AI優勢なら弱い手を打つ
-        elif 0.5-threshold < q_mean < 0.5+threshold:
-            return legal_moves[q[legal_moves].argmax()]  # 閾値内なら強めの手を打つ
-        else:
-            return read_forward(board, value_net)  # 閾値を超えたら本気の手を打つ
-    elif ai_type=="strong":
-        if random.random() < 0.5:
-            return legal_moves[q[legal_moves].argmax()]
-        return read_forward(board, value_net)
+def get_v(board, value_net):
+    """
+    boardオブジェクトから評価値を返す関数。
+    """
+    value_net.eval()
+    with torch.no_grad():
+        v = value_net(board_to_array_aug2(board,True)).numpy().mean()
+    return v
 
 ##########
 ## MAIN ##
@@ -165,7 +154,7 @@ def handle_message(event):
         with open(f"{log_board_dir}BOARD_{userId}.pkl", "wb") as f:
             pickle.dump([board.to_line(),board.turn,ai_type], f)
         # AI's turn
-        move = get_move(board, 0, ai_type=ai_type)
+        move = get_move(board, policy_net)
         board.move(move)
         #[SAVE] board
         #############################
@@ -213,7 +202,6 @@ def handle_message(event):
         # [IF-yes] is puttable?
         else:
             # User's turn
-            q = get_q(board, value_net)
             legal_moves = list(board.legal_moves)
             if message=="pass":
                 board.move_pass()
@@ -245,7 +233,7 @@ def handle_message(event):
             # [IF-no] is gameover?
             else:
                 # AI's turn
-                move = get_move(board, q[move_from_str(message)], ai_type=ai_type)
+                move = get_move(board, policy_net)
                 board.move(move)
                 # [SAVE] move
                 #############################
@@ -274,21 +262,9 @@ def handle_message(event):
                 else:
                     # show board
                     #############################
-                    ai = int(get_v(board,result_net)*100)
-                    you = 100 - ai
-                    # eval_text = f"評価値：{q[move_from_str(message)]*100:.1f}"
-                    # eval_text += f"\nＭＡＸ：{q[legal_moves].max()*100:.1f}"
-                    # eval_text += f"\nＭＩＮ：{q[legal_moves].min()*100:.1f}"
-                    # if q[move_from_str(message)] == q[legal_moves].min():
-                    #     eval_text = "う～ん…。\n" + eval_text
-                    # elif q[move_from_str(message)] == q[legal_moves].max():
-                    #     eval_text = "ベストな手！\n" + eval_text
-                    # elif q[move_from_str(message)] >= np.median(q[legal_moves]):
-                    #     eval_text = "その調子！\n" + eval_text
-                    # else:
-                    #     eval_text = "もっとがんばれ！\n" + eval_text
-                    # send_list.append(TextSendMessage(text=eval_text))
-                    send_list.append(TextSendMessage(text=f"AI {ai}%       あなた {you}%\n{'|'*round(ai/2)} {'|'*round(you/2)}"))
+                    ai = int(32+get_v(board,value_net)*32)
+                    you = 64 - ai
+                    send_list.append(TextSendMessage(text=f"【予想最終得点】\nAI {ai}点       あなた {you}点\n{'|'*round(ai/1.5)} {'|'*round(you/1.5)}"))
                     renderPM.drawToFile(svg2rlg(io.StringIO(board.to_svg())), f"{img_save_dir}image_{userId}.jpg", fmt="JPEG")
                     send_list.append(ImageSendMessage(f"{img_dir}image_{userId}.jpg", f"{img_dir}image_{userId}.jpg"))
                     send_list.append(TextSendMessage(text=f"私は{move_to_str(move)}に置きました。\n次はあなたの番(白○)です。\n(置ける場所がないときは「パス」と言ってください)"))
@@ -298,22 +274,6 @@ def handle_message(event):
     # [RECEIVE] invalid input : translation
     #############################
     else:
-        thank_you = ["((っ´；ω；)っｱﾘｶﾞﾄｳ…｡+ﾟ",
-                     "(❁´ω`❁)ｱﾘｶﾞﾄｳｺﾞｻﾞｲﾏｽ",
-                     "(*´ｰ`*人)ｱﾘｶﾞﾀﾔｰ",
-                     " 'ω')ｱｻﾞｽ",
-                     "感謝(*´ω｀人)感謝",
-                     "(⁎˃ᴗ˂⁎) thank you♡",
-                     "ᵗʱᵃᵑᵏᵧₒᵤ⸜(*ˊᵕˋ*)⸝ﾜｰｲ",
-                     "(*ﾉ>ᴗ<)ﾃﾍｯ"
-                    ]
-        birthday_words = ["誕生","おめでとう","HPB","birthday","Birthday","ハッピーバースデー","ハッピーバースデイ","ハピバ"]
-        now = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9)))
-        if ((now.month, now.day)) == (4,3) and any(word in message for word in birthday_words):
-            send_list.append(TextSendMessage(text=random.choice(thank_you)))
-            line_bot_api.reply_message(event.reply_token, send_list)
-            return 0 # [SEND]
-
         if "大機" in message:
             message = message.replace("大機","だいき")
         try:

@@ -1,77 +1,111 @@
 import torch.nn as nn
 
-class DuelingNet(nn.Module):
-    def __init__(self, c=100):
+class PolicyNetwork(nn.Module):
+    def __init__(self):
         super().__init__()
-        self.c = c
-        self.conv_layer = nn.Sequential(
-            nn.Conv2d(2, c, kernel_size=3, padding=1),
-            nn.BatchNorm2d(c),
-            nn.LeakyReLU(),
-            nn.Conv2d(c, c, kernel_size=3, padding=1),
-            nn.BatchNorm2d(c),
-            nn.LeakyReLU(),
-            nn.Conv2d(c, c, kernel_size=3, padding=1),
-            nn.BatchNorm2d(c),
-            nn.LeakyReLU(),
-            nn.Conv2d(c, c, kernel_size=3, padding=1),
-            nn.BatchNorm2d(c),
-            nn.LeakyReLU(),
-            nn.Conv2d(c, c, kernel_size=3, padding=1),
-            nn.BatchNorm2d(c),
-            nn.LeakyReLU()
-        )
-        self.fc_layer = nn.Sequential(
-            nn.Linear(c*64, 256),
+        n_filters = 100
+        self.input_layer = nn.Sequential(
+            nn.Conv2d(8,n_filters,kernel_size=5,padding=2),
             nn.ReLU()
         )
-        self.adv_layer = nn.Linear(256, 65)
-        self.val_layer = nn.Linear(256, 1)
-
-    def forward(self, x):
-        x = self.conv_layer(x)
-        x = x.view(-1, self.c*64)
-        x = self.fc_layer(x)
-        adv = self.adv_layer(x)
-        val = self.val_layer(x).expand(-1,65)
-        out = adv + val - adv.mean(1, keepdim=True).expand(-1,65)
-        return out.tanh()
-
-class ValueNet(nn.Module):
-    def __init__(self, c=100):
-        super().__init__()
-        self.c = c
-        self.conv_layer = nn.Sequential(
-            nn.Conv2d(2, c, kernel_size=3, padding=1),
-            nn.BatchNorm2d(c),
-            nn.LeakyReLU(),
-            nn.Conv2d(c, c, kernel_size=3, padding=1),
-            nn.BatchNorm2d(c),
-            nn.LeakyReLU(),
-            nn.Conv2d(c, c, kernel_size=3, padding=1),
-            nn.BatchNorm2d(c),
-            nn.LeakyReLU(),
-            nn.Conv2d(c, c, kernel_size=3, padding=1),
-            nn.BatchNorm2d(c),
-            nn.LeakyReLU(),
-            nn.Conv2d(c, c, kernel_size=3, padding=1),
-            nn.BatchNorm2d(c),
-            nn.LeakyReLU()
-        )
-        self.fc_layer = nn.Sequential(
-            nn.Linear(c*64, 256),
+        self.hidden_layer = nn.Sequential(
+            nn.Conv2d(n_filters,n_filters,kernel_size=3,padding=1),
+            nn.BatchNorm2d(n_filters),
+            nn.ReLU(),
+            nn.Conv2d(n_filters,n_filters,kernel_size=3,padding=1),
+            nn.BatchNorm2d(n_filters),
+            nn.ReLU(),
+            nn.Conv2d(n_filters,n_filters,kernel_size=3,padding=1),
+            nn.BatchNorm2d(n_filters),
+            nn.ReLU(),
+            nn.Conv2d(n_filters,n_filters,kernel_size=3,padding=1),
+            nn.BatchNorm2d(n_filters),
+            nn.ReLU(),
+            nn.Conv2d(n_filters,n_filters,kernel_size=3,padding=1),
+            nn.BatchNorm2d(n_filters),
+            nn.ReLU(),
+            nn.Conv2d(n_filters,n_filters,kernel_size=3,padding=1),
+            nn.BatchNorm2d(n_filters),
+            nn.ReLU(),
+            nn.Conv2d(n_filters,n_filters,kernel_size=3,padding=1),
+            nn.BatchNorm2d(n_filters),
+            nn.ReLU(),
+            nn.Conv2d(n_filters,n_filters,kernel_size=3,padding=1),
+            nn.BatchNorm2d(n_filters),
+            nn.ReLU(),
+            nn.Conv2d(n_filters,n_filters,kernel_size=3,padding=1),
+            nn.BatchNorm2d(n_filters),
+            nn.ReLU(),
+            nn.Conv2d(n_filters,n_filters,kernel_size=3,padding=1),
+            nn.BatchNorm2d(n_filters),
+            nn.ReLU(),
+            nn.Conv2d(n_filters,n_filters,kernel_size=3,padding=1),
+            nn.BatchNorm2d(n_filters),
             nn.ReLU()
         )
-        self.adv_layer = nn.Linear(256, 65)
-        self.val_layer = nn.Linear(256, 1)
-        self.output_layer = nn.Linear(65, 1)
+        self.output_layer = nn.Sequential(
+            nn.Conv2d(n_filters,1,kernel_size=1),
+            nn.Flatten()
+        )
         
-    def forward(self, x):
-        x = self.conv_layer(x)
-        x = x.view(-1, self.c*64)
-        x = self.fc_layer(x)
-        adv = self.adv_layer(x)
-        val = self.val_layer(x).expand(-1,65)
-        out = adv + val - adv.mean(1, keepdim=True).expand(-1,65)
+    def forward(self,x):
+        out = self.input_layer(x)
+        out = self.hidden_layer(out)
         out = self.output_layer(out)
         return out
+
+class ValueNetwork(nn.Module):
+    def __init__(self):
+        super().__init__()
+        n_filters = 10
+        self.input_layer = nn.Sequential(
+            nn.Conv2d(9,n_filters,kernel_size=5,padding=2),
+            nn.ReLU()
+        )
+        self.hidden_layer = nn.Sequential(
+            nn.Conv2d(n_filters,n_filters,kernel_size=3,padding=1),
+            nn.ReLU(),
+            nn.BatchNorm2d(n_filters),
+            nn.Conv2d(n_filters,n_filters,kernel_size=3,padding=1),
+            nn.ReLU(),
+            nn.BatchNorm2d(n_filters),
+            nn.Conv2d(n_filters,n_filters,kernel_size=3,padding=1),
+            nn.ReLU(),
+            nn.BatchNorm2d(n_filters),
+            nn.Conv2d(n_filters,n_filters,kernel_size=3,padding=1),
+            nn.ReLU(),
+            nn.BatchNorm2d(n_filters),
+            nn.Conv2d(n_filters,n_filters,kernel_size=3,padding=1),
+            nn.ReLU(),
+            nn.BatchNorm2d(n_filters),
+            nn.Conv2d(n_filters,n_filters,kernel_size=3,padding=1),
+            nn.ReLU(),
+            nn.BatchNorm2d(n_filters),
+            nn.Conv2d(n_filters,n_filters,kernel_size=3,padding=1),
+            nn.ReLU(),
+            nn.BatchNorm2d(n_filters),
+            nn.Conv2d(n_filters,n_filters,kernel_size=3,padding=1),
+            nn.ReLU(),
+            nn.BatchNorm2d(n_filters),
+            nn.Conv2d(n_filters,n_filters,kernel_size=3,padding=1),
+            nn.ReLU(),
+            nn.BatchNorm2d(n_filters),
+            nn.Conv2d(n_filters,n_filters,kernel_size=3,padding=1),
+            nn.ReLU(),
+            nn.BatchNorm2d(n_filters),
+            nn.Conv2d(n_filters,n_filters,kernel_size=3,padding=1),
+            nn.Conv2d(n_filters,n_filters,kernel_size=1,padding=1),
+            nn.Flatten()
+        )
+        self.output_layer = nn.Sequential(
+            nn.Linear(n_filters*100, 256),
+            nn.ReLU(),
+            nn.Linear(256, 1)
+        )
+        
+    def forward(self,x):
+        out = self.input_layer(x)
+        out = self.hidden_layer(out)
+        out = self.output_layer(out)
+        return out.tanh()
+
