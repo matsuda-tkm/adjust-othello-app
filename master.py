@@ -5,6 +5,7 @@ import numpy as np
 from copy import copy
 import pickle
 import io
+import os
 from svglib.svglib import svg2rlg
 from reportlab.graphics import renderPM
     
@@ -107,7 +108,7 @@ def board_to_array_aug2(board, return_torch=False):
 
 class Master:
     def __init__(self, mode):
-        assert mode in ['strong', 'enjoy']
+        assert mode in ['strong', 'adjust']
         self.mode = mode
         self.board = Board()
         self.moves = ''
@@ -137,13 +138,16 @@ class Master:
         table = str.maketrans(zenkaku, hankaku)
         input_str = input_str.translate(table).lower()
 
-        if input_str in ['pass', 'パス', 'ぱす', 'pas']:
+        if input_str in ['pass', 'パス', 'ぱす', 'pas', 'ぱs']:
             return 'pass'
         
         if re.match(r'^[a-h][1-8]$', input_str):
             return input_str
 
         return None
+    
+    def is_legal(self, move_str):
+        return move_from_str(move_str) in list(self.board.legal_moves)
 
     def move(self, move_str):
         """
@@ -161,8 +165,11 @@ class Master:
         1. 盤面をmove_strに従って更新する
         2. move_strを履歴(moves)に追加する
         """
-        self.board.move_from_str(move_str)
-        self.moves += move_str
+        if move_str == 'pass':
+            self.board.move_pass()
+        else:
+            self.board.move_from_str(move_str)
+            self.moves += move_str
     
     def get_move(self, model_p=None, model_v=None):
         """
@@ -181,7 +188,7 @@ class Master:
         Process
         -------
         1. modeが'strong'なら、方策関数を用いて最善手を探索する
-        2. modeが'enjoy'なら、価値関数/MiniMaxを用いて最善手を探索する
+        2. modeが'adjust'なら、価値関数/MiniMaxを用いて最善手を探索する
         """
         if self.mode == 'strong':
             model_p.eval()
@@ -194,7 +201,7 @@ class Master:
             output = output[0][legal_moves]
             return move_to_str(legal_moves[np.argmax(output)])
         
-        elif self.mode == 'enjoy':
+        elif self.mode == 'adjust':
             """
             1. 合計石個数が53個以下なら、深さ3の木を作成
             2. 合計石個数が54個以上なら、深さmaxの木を作成
@@ -233,11 +240,17 @@ class Master:
             zmax = self.tree.get_max()
             zmin = self.tree.get_min()
             return zmax, zmin
+        elif self.board.piece_sum() >= 4:
+            model_v.eval()
+            with torch.no_grad():
+                out = model_v(board_to_array_aug2(self.board,True))
+            return out.max().item()*64, out.min().item()*64
         else:
             return 0, 0
         
     def save(self, path):
         """Masterオブジェクトの保存"""
+        self.board = (self.board.to_line(), self.board.turn)
         with open(path, 'wb') as f:
             pickle.dump(self, f)
     
@@ -246,7 +259,10 @@ class Master:
         with open(path, 'rb') as f:
             master = pickle.load(f)
         self.mode = master.mode
-        self.board = master.board
+        self.board = Board()
+        self.board.set_line(master.board[0], True)
+        if self.board.turn != master.board[1]:
+            self.board.move_pass()
         self.moves = master.moves
         self.tree = master.tree
 
@@ -267,23 +283,43 @@ class Master:
             ## 末尾に##がある場合、その行を削除してから追加
             with open(path, 'r') as f:
                 lines = f.readlines()
-            if lines[-1].strip()[-2:] == '##':
-                lines = lines[:-1]
+                last = lines[-1].strip()
+            if last[-2:] == '##':
+                if len(moves) >= len(last):
+                    lines = lines[:-1]
             lines.append(moves)
             with open(path, 'w') as f:
                 f.writelines(lines)
     
     def save_image(self, path):
         """盤面の画像を保存"""
-        renderPM.drawToFile(svg2rlg(io.StringIO(self.board.to_svg())), path, fmt="JPEG")
+        if self.moves == '':
+            previous_move = None
+        else:
+            previous_move = move_from_str(self.moves[-2:])
+        renderPM.drawToFile(svg2rlg(io.StringIO(self.board.to_svg(previous_move))), path, fmt="JPEG")
+
+    def count_result(self):
+        """結果を集計する関数"""
+        assert self.board.is_game_over()
+        black = self.board.piece_num() if self.board.turn else self.board.opponent_piece_num()
+        white = self.board.opponent_piece_num() if self.board.turn else self.board.piece_num()
+        return black, white
 
         
 
 class Node:
     def __init__(self, board):
         self.data = [None, None, None, None]
-        self.board = board
+        self.board = (board.to_line(), board.turn)
         self.children = []
+
+    def get_board(self):
+        b = Board()
+        b.set_line(self.board[0], True)
+        if b.turn != self.board[1]:
+            b.move_pass()
+        return b
 
     def add(self, child):
         self.children.append(child)
@@ -304,12 +340,12 @@ class Node:
 
     def evaluate(self, model_v=None):
         if model_v is None:
-            assert self.board.is_game_over(), self.board.to_line()
-            z = self.board.diff_num() if self.board.turn else -self.board.diff_num()
+            assert self.get_board().is_game_over(), self.get_board().to_line()
+            z = self.get_board().diff_num() if self.get_board().turn else -self.get_board().diff_num()
             return (abs(z), abs(z), z, z)
         else:
             with torch.no_grad():
-                z = model_v(board_to_array_aug2(self.board,True)).mean().item()*64
+                z = model_v(board_to_array_aug2(self.get_board(),True)).mean().item()*64
             return (abs(z), abs(z), z, z)
     
     def get_absmin(self):
@@ -334,8 +370,8 @@ def create_tree(node, depth):
     """根=node,深さ=depthの木を作成"""
     if depth == 0:
         return
-    for move in list(node.board.legal_moves):
-        new_board = apply_move(node.board, move)
+    for move in list(node.get_board().legal_moves):
+        new_board = apply_move(node.get_board(), move)
         child = Node(new_board)
         node.add(child)
         if not new_board.is_game_over():
@@ -343,25 +379,25 @@ def create_tree(node, depth):
 
 def minimax(node, turn, depth):
     '''ミニマックス法で引き分け最善手を探索する関数'''
-    if depth == 0 or node.board.is_game_over():
+    if depth == 0 or node.get_board().is_game_over():
         z = node.get_absmin()
-        return z, list(node.board.legal_moves)[0]
+        return z, list(node.get_board().legal_moves)[0]
     
-    if node.board.turn == turn:
+    if node.get_board().turn == turn:
         zbest = np.inf
         mbest = None
         for i,child in enumerate(node.children):
-            z,_ = minimax_draw(child, turn, depth-1)
+            z,_ = minimax(child, turn, depth-1)
             if zbest > z:
                 zbest = z
-                mbest = list(node.board.legal_moves)[i]
+                mbest = list(node.get_board().legal_moves)[i]
     else:
         zbest = -np.inf
         mbest = None
         for i,child in enumerate(node.children):
-            z,_ = minimax_draw(child, turn, depth-1)
+            z,_ = minimax(child, turn, depth-1)
             if zbest < z:
                 zbest = z
-                mbest = list(node.board.legal_moves)[i]
+                mbest = list(node.get_board().legal_moves)[i]
     assert (abs(zbest)<100) and (mbest is not None), f'zbest={zbest}, mbest={mbest}'
     return zbest, mbest

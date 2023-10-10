@@ -23,6 +23,20 @@
   </div>
 
     <section class="update">
+      <h2>バージョン 1.4.0</h2>
+      <ul>
+        <p class="date">2023年10月10日21:30</p>
+        <li><span class="tag bug-fix">精度改善</span><span class="tag feature">機能変更</span>引き分けを目指す「忖度AI」の精度を改善し、局面の評価方法を変更しました。</li>
+        <ol>
+          <li>ランダムに手を選ぶと、約50%の確率で引き分け、約80%の確率で2点差以内になります。従来精度の5倍改善に成功しました。</li>
+          <li>評価値は黒番から見た得点差で表示されるようになりました。MAX/MINはそれぞれ予想得点差の上限/下限を表しています。忖度AIで対戦する場合、最後の10手は正確な評価値が計算されます。</li>
+          <li>石を置く場所を指定する際「A1」「ａ１」「a1」など全/半角・大/小文字が混合していても入力を受付けるようにしました。また「ぱs」でもパスできるようになりました。</li>
+        </ol>
+      </ul>
+      <img src="https://matsudatkm.pythonanywhere.com/static/draw_ai_evaluation.svg" alt="グラフ" style="width: 100%; height: auto; max-width: 600px; max-height: 600px; margin: 0 auto; display: block;">
+    </section>
+
+    <section class="update">
       <h2>バージョン 1.3.1</h2>
       <ul>
         <p class="date">2023年9月11日23:15</p>
@@ -142,7 +156,7 @@
 </body>
 <footer>
     <img src="https://matsudatkm.pythonanywhere.com/static/icon.png" alt="ロゴ" class="logo_left">
-    <p>&copy; 2023 Matsuda Takumi</p>
+    <p>&copy; 2023 Matsuda Takumi (<a href="https://github.com/matsuda-tkm/adjust-othello-app">GitHub</a>)</p>
     <img src="https://matsudatkm.pythonanywhere.com/static/icon.png" alt="ロゴ" class="logo_right">
 </footer>
 </html>

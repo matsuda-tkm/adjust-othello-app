@@ -1,6 +1,5 @@
 import os
 import datetime
-import pickle
 
 def save_message(message, path):
     """メッセージログ"""
