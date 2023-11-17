@@ -1,0 +1,7 @@
+streamlit==1.28.2
+creversi==0.0.1
+torch==1.13.1
+matplotlib==3.5.3
+numpy==1.22.4
+svglib==1.5.1
+reportlab==4.0.7
