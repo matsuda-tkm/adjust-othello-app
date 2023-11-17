@@ -1,7 +1,7 @@
 import sys
 import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
+parent = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(parent)
 import streamlit as st
 from creversi import *
 from network import ValueNetwork, PolicyNetwork
@@ -13,8 +13,8 @@ st.header('忖度オセロAI')
 
 model_v = ValueNetwork().to(device)
 model_p = PolicyNetwork().to(device)
-model_v.load_state_dict(torch.load('../trained_models/value-network-v2.pth', map_location=device))
-model_p.load_state_dict(torch.load('../trained_models/policy-network-v3.pth', map_location=device))
+model_v.load_state_dict(torch.load(parent+'/trained_models/value-network-v2.pth', map_location=device))
+model_p.load_state_dict(torch.load(parent+'/trained_models/policy-network-v3.pth', map_location=device))
 model_v.eval()
 model_p.eval()
 
