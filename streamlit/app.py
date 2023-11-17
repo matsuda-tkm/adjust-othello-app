@@ -18,24 +18,11 @@ model_p.load_state_dict(torch.load(parent+'/trained_models/policy-network-v3.pth
 model_v.eval()
 model_p.eval()
 
-def move_AI(board):
-    global model_p
-    with torch.no_grad():
-        output = model_p(board_to_array(board,True).unsqueeze(0).to(device)).numpy()
-        move = legal_moves[np.argmax(output[0][legal_moves]).item()]
-    return move
-
-def move_AI2(master):
+def move_AI(master):
     move_str = master.get_move(model_p, model_v)
     return move_from_str(move_str)
 
-def eval(board):
-    with torch.no_grad():
-        output = model_v(board_to_array_aug2(board,True).to(device)).numpy() *64
-        output = output.mean()
-    return output
-
-def eval2(master):
+def eval(master):
     return master.evaluate_board(model_v)
 
 
@@ -48,20 +35,20 @@ def move(x, y):
         st.session_state.master = master
         st.session_state.move = move
         st.session_state.eval.append(eval(board))
-        M,m = eval2(master)
+        M,m = eval(master)
         st.session_state.eval_max.append(M)
         st.session_state.eval_min.append(m)
 
         legal_moves = list(board.legal_moves)
         if legal_moves != [64]:
-            move = move_AI2(master)
+            move = move_AI(master)
             board.move(move)
             master.move(move_to_str(move))
             st.session_state.board = board
             st.session_state.master = master
             st.session_state.move = move
             st.session_state.eval.append(eval(board))
-            M,m = eval2(master)
+            M,m = eval(master)
             st.session_state.eval_max.append(M)
             st.session_state.eval_min.append(m)
         else:
@@ -71,7 +58,7 @@ def move(x, y):
             st.session_state.master = master
             st.session_state.move = 64
             st.session_state.eval.append(eval(board))
-            M,m = eval2(master)
+            M,m = eval(master)
             st.session_state.eval_max.append(M)
             st.session_state.eval_min.append(m)
 
@@ -80,7 +67,7 @@ def move_pass():
     st.session_state.board = board
     st.session_state.move = 64
 
-    move = move_AI(board)
+    move = move_AI(master)
     board.move(move)
     st.session_state.board = board
     st.session_state.move = move
