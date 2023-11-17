@@ -22,7 +22,13 @@ def move_AI(master):
     move_str = master.get_move(model_p, model_v)
     return move_from_str(move_str)
 
-def eval(master):
+def eval(board):
+    with torch.no_grad():
+        output = model_v(board_to_array_aug2(board,True).to(device)).numpy() *64
+        output = output.mean()
+    return output
+
+def eval2(master):
     return master.evaluate_board(model_v)
 
 
@@ -35,20 +41,20 @@ def move(x, y):
         st.session_state.master = master
         st.session_state.move = move
         st.session_state.eval.append(eval(board))
-        M,m = eval(master)
+        M,m = eval2(master)
         st.session_state.eval_max.append(M)
         st.session_state.eval_min.append(m)
 
         legal_moves = list(board.legal_moves)
         if legal_moves != [64]:
-            move = move_AI(master)
+            move = move_AI2(master)
             board.move(move)
             master.move(move_to_str(move))
             st.session_state.board = board
             st.session_state.master = master
             st.session_state.move = move
             st.session_state.eval.append(eval(board))
-            M,m = eval(master)
+            M,m = eval2(master)
             st.session_state.eval_max.append(M)
             st.session_state.eval_min.append(m)
         else:
@@ -58,7 +64,7 @@ def move(x, y):
             st.session_state.master = master
             st.session_state.move = 64
             st.session_state.eval.append(eval(board))
-            M,m = eval(master)
+            M,m = eval2(master)
             st.session_state.eval_max.append(M)
             st.session_state.eval_min.append(m)
 
@@ -72,6 +78,9 @@ def move_pass():
     st.session_state.board = board
     st.session_state.move = move
     st.session_state.eval.append(eval(board))
+    M,m = eval2(master)
+    st.session_state.eval_max.append(M)
+    st.session_state.eval_min.append(m)
 
 st.markdown("""
     <style>
