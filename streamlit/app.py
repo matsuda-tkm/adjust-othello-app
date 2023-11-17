@@ -47,7 +47,7 @@ def move(x, y):
 
         legal_moves = list(board.legal_moves)
         if legal_moves != [64]:
-            move = move_AI2(master)
+            move = move_AI(master)
             board.move(move)
             master.move(move_to_str(move))
             st.session_state.board = board
