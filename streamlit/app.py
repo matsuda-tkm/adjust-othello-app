@@ -71,6 +71,7 @@ def move(x, y):
 def move_pass():
     board.move(64)
     st.session_state.board = board
+    st.session_state.master = master
     st.session_state.move = 64
 
     move = move_AI(master)
